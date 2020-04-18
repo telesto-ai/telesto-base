@@ -1,0 +1,5 @@
+group	class	path
+100um_noM2_001_Recal	off	inputs/100um_noM2_001_Recal/off/C14H20N6O5S+H.png
+100um_noM2_001_Recal	off	inputs/100um_noM2_001_Recal/off/C15H19NO10+H.png
+100um_noM2_001_Recal	on	inputs/100um_noM2_001_Recal/on/C12H21NO9S2+H.png
+100um_noM2_001_Recal	on	inputs/100um_noM2_001_Recal/on/C14H10F3NO5+Na.png
