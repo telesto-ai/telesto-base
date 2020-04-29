@@ -3,7 +3,7 @@ name: Docker Push
 on:
   push:
     branches:
-      - develop
+      - master
 
 jobs:
   docker:
@@ -23,4 +23,4 @@ jobs:
           PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKERFILE: "Dockerfile"
           IMAGE_NAME: "telestoai/model-api-base"
-          TAG_NAME: "latest"
+          TAG_NAME: "v0.0.1"

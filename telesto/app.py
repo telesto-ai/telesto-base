@@ -26,21 +26,11 @@ class PredictResource:
 
     @staticmethod
     def _load_model():
-        components = os.environ.get("MODEL_CLASS").split(".")
-
-        if components is None:
-            raise EnvironmentError("MODEL_CLASS environment variable not defined, please specify it in the Dockerfile")
-
-        module_name = ".".join(components[:-1])
+        module_name = "model"
         module = import_module(module_name)
-        class_name = components[-1]
+        class_name = "ClassificationModel"
         model_class = getattr(module, class_name)
-        model_path = os.environ.get("MODEL_PATH")
-
-        if model_path is None:
-            raise EnvironmentError("MODEL_PATH environment variable not defined, please specify it in the Dockerfile")
-
-        return model_class(model_path=model_path)
+        return model_class()
 
     def on_get(self, req, resp):
         doc = {"status": "ok", "host": socket.getfqdn(), "worker.pid": os.getpid()}

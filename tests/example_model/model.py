@@ -11,6 +11,7 @@ from telesto.models import ClassificationModelBase
 
 
 CLASSES = ["on", "off"]
+MODEL_PATH = 'model.pt'
 
 
 def _convert_to_pil(array):
@@ -25,9 +26,9 @@ def _convert_to_pil(array):
     return Image.fromarray(array)
 
 
-class ExampleClassificationModel(ClassificationModelBase):
-    def __init__(self, model_path: str):
-        super().__init__(classes=CLASSES, model_path=model_path)
+class ClassificationModel(ClassificationModelBase):
+    def __init__(self):
+        super().__init__(classes=CLASSES, model_path=MODEL_PATH)
         self.input_size = 224
         self.data_transform = transforms.Compose(
             [
