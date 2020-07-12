@@ -21,8 +21,8 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         add-apt-repository ppa:deadsnakes/ppa && \
         apt-get update && \
         DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
-            python3.6 \
-            python3.6-dev \
+            python3.8 \
+            python3.8-dev \
             python3-distutils-extra \
             && \
         ln -s /usr/bin/python3.6 /usr/local/bin/python3 && \

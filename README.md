@@ -32,19 +32,5 @@ docker build -t telestoai/model-api-base -f Dockerfile .
 
 ## An example model
 If you are stuck on how to prepare your model for submission, we have prepared a concrete example
-for you. To build the image which you will submit, use
-```
-docker build -t example/model-api -f tests/example_model/Dockerfile tests/example_model
-```
-The container can be started with
-```
-docker run -p 9876:9876 --name model-api --rm example/model-api
-```
-Now it is ready to accept requests! Try it with
-```
-curl http://localhost:9876/
-```
-To try it with some example data, use
-````
-curl -X POST -H "Content-Type: application/json" --data-binary @tests/data/example-input.json http://localhost:9876/
-```
+for you. The example is available in the [telesto-models](https://github.com/telesto-ai/telesto-models) repository with further instructions
+on the usage.
