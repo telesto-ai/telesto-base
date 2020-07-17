@@ -7,6 +7,8 @@ from importlib import import_module
 import falcon
 from falcon.http_status import HTTPStatus
 
+from telesto.models import RandomModel
+
 logger = logging.getLogger("telesto")
 
 
@@ -34,7 +36,14 @@ else:
 
 class PredictResource:
     def __init__(self):
-        self.model_wrapper = self._load_model()
+        try:
+            self.model_wrapper = self._load_model()
+        except ModuleNotFoundError as e:
+            if int(os.environ.get("USE_FALLBACK_MODEL", 0)):
+                logger.warning("No model module found. Using fallback model 'RandomModel'")
+                self.model_wrapper = RandomModel()
+            else:
+                raise e
 
     @staticmethod
     def _load_model():
@@ -66,13 +75,11 @@ def get_app():
     return api
 
 
-app = get_app()
-
 if __name__ == "__main__":
     logger.info("Starting API server...")
 
     from wsgiref import simple_server
 
-    httpd = simple_server.make_server("0.0.0.0", 9876, app)
+    httpd = simple_server.make_server("0.0.0.0", 9876, get_app())
     logger.info("API server started")
     httpd.serve_forever()

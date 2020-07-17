@@ -4,13 +4,14 @@ import setuptools
 with open("requirements.txt", "r") as req_f:
     install_requires = req_f.read().splitlines()
 
-
 setuptools.setup(
     name="telesto-base",
-    version="0.0.1",
+    version="0.0.2",
     author="telesto.ai",
     author_email="contact@telesto.ai",
     description="Base tools for telesto.ai models",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
     url="https://github.com/telesto-ai/telesto-base",
     packages=setuptools.find_packages(),
     classifiers=[

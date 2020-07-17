@@ -21,12 +21,12 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         add-apt-repository ppa:deadsnakes/ppa && \
         apt-get update && \
         DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
-            python3.8 \
-            python3.8-dev \
+            python3.7 \
+            python3.7-dev \
             python3-distutils-extra \
             && \
-        ln -s /usr/bin/python3.6 /usr/local/bin/python3 && \
-        ln -s /usr/bin/python3.6 /usr/local/bin/python && \
+        ln -s /usr/bin/python3.7 /usr/local/bin/python3 && \
+        ln -s /usr/bin/python3.7 /usr/local/bin/python && \
     wget -O /tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py && \
     python /tmp/get-pip.py && \
     $PIP_INSTALL setuptools && \
@@ -35,18 +35,25 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     apt-get autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
-WORKDIR /
+WORKDIR /root
 
-COPY requirements.txt /
-RUN python -m pip --no-cache-dir install --upgrade -r requirements.txt
+COPY telesto telesto
+COPY requirements.txt .
+COPY README.md .
+COPY setup.py .
+RUN python -m pip install --user . && \
+    rm -r telesto
 
-COPY telesto /telesto
-COPY *.sh /
+COPY app.py .
+COPY *.sh .
 
 RUN chmod +x *.sh
 
 EXPOSE 9876
 
 ENV PYTHONDONTWRITEBYTECODE 1
+# Make sure scripts in .local are usable:
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=/root/.local/lib/python3.7/site-packages
 
-CMD [ "/start-api.sh" ]
+CMD [ "./start-api.sh" ]
