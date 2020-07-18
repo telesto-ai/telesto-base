@@ -1,4 +1,5 @@
 import setuptools
+from telesto import __version__
 
 
 with open("requirements.txt", "r") as req_f:
@@ -6,7 +7,7 @@ with open("requirements.txt", "r") as req_f:
 
 setuptools.setup(
     name="telesto-base",
-    version="0.0.2",
+    version=__version__,
     author="telesto.ai",
     author_email="contact@telesto.ai",
     description="Base tools for telesto.ai models",

@@ -5,12 +5,13 @@ name: Publish "telesto-base" Python Package on PyPI
 
 on:
   push:
+    paths:
+      - 'telesto/__init__.py'
     branches:
       - master
 
 jobs:
   deploy:
-
     runs-on: ubuntu-latest
 
     steps:
