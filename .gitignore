@@ -4,3 +4,5 @@ __pycache__
 /dist/
 /telesto_base.egg-info/
 /pip-wheel-metadata/
+/local/
+/data/

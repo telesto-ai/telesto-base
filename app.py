@@ -1,15 +1,10 @@
-import os
-import json
-import socket
-import logging
-from importlib import import_module
+import sys
 
 import falcon
 from falcon.http_status import HTTPStatus
 
-from telesto.models import RandomModel
-
-logger = logging.getLogger("telesto")
+from telesto.logger import logger
+from telesto.models import ModelTypes
 
 
 class HandleCORS(object):
@@ -22,64 +17,26 @@ class HandleCORS(object):
             raise HTTPStatus(falcon.HTTP_200, body="\n")
 
 
-gunicorn_logger = logging.getLogger("gunicorn")
-if gunicorn_logger.handlers:
-    logger.handlers = gunicorn_logger.handlers
-    logger.setLevel(gunicorn_logger.level)
-else:
-    logger.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-
-
-class PredictResource:
-    def __init__(self):
-        try:
-            self.model_wrapper = self._load_model()
-        except ModuleNotFoundError as e:
-            if int(os.environ.get("USE_FALLBACK_MODEL", 0)):
-                logger.warning("No model module found. Using fallback model 'RandomModel'")
-                self.model_wrapper = RandomModel()
-            else:
-                raise e
-
-    @staticmethod
-    def _load_model():
-        module_name = "model"
-        module = import_module(module_name)
-        class_name = "ClassificationModel"
-        model_class = getattr(module, class_name)
-        return model_class()
-
-    def on_get(self, req, resp):
-        doc = {"status": "ok", "host": socket.getfqdn(), "worker.pid": os.getpid()}
-        resp.body = json.dumps(doc, ensure_ascii=False)
-
-    def on_post(self, req, resp):
-        try:
-            req_doc = json.load(req.bounded_stream)
-            resp_doc = self.model_wrapper(req_doc)
-            resp.body = json.dumps(resp_doc)
-        except ValueError as e:
-            raise falcon.HTTPError(falcon.HTTP_400, description=str(e))
-        except Exception as e:
-            logger.error(e, exc_info=True)
-            raise falcon.HTTPError(falcon.HTTP_500)
-
-
-def get_app():
+def get_app(model_type: ModelTypes = ModelTypes.CLASSIFICATION):
     api = falcon.API(middleware=[HandleCORS()])
-    api.add_route("/", PredictResource())
+
+    if model_type == ModelTypes.SEGMENTATION:
+        from telesto.apps.segmentation import add_routes
+    elif model_type == ModelTypes.CLASSIFICATION:
+        from telesto.apps.classification import add_routes
+    else:
+        raise Exception(f"Wrong model type: {model_type}")
+
+    add_routes(api)
     return api
 
 
 if __name__ == "__main__":
-    logger.info("Starting API server...")
+    logger.info("Starting dev API server...")
 
     from wsgiref import simple_server
 
-    httpd = simple_server.make_server("0.0.0.0", 9876, get_app())
-    logger.info("API server started")
+    model_type = ModelTypes(sys.argv[1])
+    httpd = simple_server.make_server("0.0.0.0", 9876, get_app(model_type))
+    logger.info("Dev API server started")
     httpd.serve_forever()

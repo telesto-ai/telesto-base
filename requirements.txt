@@ -2,3 +2,4 @@ numpy
 Pillow
 gunicorn>=20.0
 falcon>=2.0
+pytest

@@ -56,4 +56,4 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONPATH=/root/.local/lib/python3.7/site-packages
 
-CMD [ "./start-api.sh" ]
+ENTRYPOINT [ "./start-api.sh" ]
