@@ -12,7 +12,8 @@ import shutil
 import json
 from collections import deque
 
-from PIL import Image
+import PIL
+from PIL.Image import Image
 import falcon
 
 from telesto.logger import logger
@@ -21,7 +22,7 @@ from telesto.models.segmentation import DummySegmentationModel, SegmentationMode
 
 def preprocess(doc: dict) -> Image:
     image_bytes = base64.b64decode(doc["image"]["content"])
-    image = Image.open(io.BytesIO(image_bytes))
+    image = PIL.Image.open(io.BytesIO(image_bytes))
     return image
 
 
@@ -63,7 +64,7 @@ class ImageStorage:
     def load(self, gid: str, is_mask: bool) -> Image:
         image_path = self._image_path(gid, is_mask)
         if image_path.exists():
-            return Image.open(image_path)
+            return PIL.Image.open(image_path)
 
 
 class SegmentationJobs:

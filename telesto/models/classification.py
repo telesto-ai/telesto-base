@@ -22,7 +22,7 @@ class ClassificationModelBase:
         self.model_path: str = model_path
         self.model = self._load_model(model_path=model_path)
 
-    def _load_model(self, model_path: str):
+    def _load_model(self, model_path: str) -> object:
         raise NotImplemented
 
     def predict(self, input_list: List[np.ndarray]) -> np.ndarray:

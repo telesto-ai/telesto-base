@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     PIP_INSTALL="python -m pip --no-cache-dir install --upgrade" && \
@@ -51,7 +51,7 @@ RUN chmod +x *.sh
 
 EXPOSE 9876
 
-ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 # Make sure scripts in .local are usable:
 ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONPATH=/root/.local/lib/python3.7/site-packages
