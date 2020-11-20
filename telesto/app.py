@@ -21,9 +21,9 @@ def get_app(model_type: ModelTypes = ModelTypes.CLASSIFICATION):
     api = falcon.API(middleware=[HandleCORS()])
 
     if model_type == ModelTypes.SEGMENTATION:
-        from telesto.apps.segmentation import add_routes
+        from telesto.segmentation.app import add_routes
     elif model_type == ModelTypes.CLASSIFICATION:
-        from telesto.apps.classification import add_routes
+        from telesto.classification.app import add_routes
     else:
         raise Exception(f"Wrong model type: {model_type}")
 

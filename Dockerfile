@@ -44,7 +44,6 @@ COPY setup.py .
 RUN python -m pip install --user . && \
     rm -r telesto
 
-COPY app.py .
 COPY *.sh .
 
 RUN chmod +x *.sh
