@@ -10,16 +10,23 @@ import pytest
 import numpy as np
 import PIL.Image
 
-from app import get_app
-from models import ModelTypes
+from telesto.app import get_app
+from telesto.config import config
+from telesto.models import ModelTypes
 from telesto.segmentation import DataStorage, SegmentationObject
 
 os.environ["USE_FALLBACK_MODEL"] = "1"
 
 
+@pytest.fixture(scope="session", autouse=True)
+def config_fixture():
+    config["common"]["model_type"] = ModelTypes.SEGMENTATION.value
+    config["common"]["api_key"] = ""
+
+
 @pytest.fixture
 def client():
-    return testing.TestClient(get_app(model_type=ModelTypes.SEGMENTATION))
+    return testing.TestClient(get_app())
 
 
 @pytest.fixture(scope="session")
@@ -73,7 +80,7 @@ def test_docs_get(client: testing.TestClient):
 
 def test_segm_get(client: testing.TestClient, storage: DataStorage):
     job_id = "bcd"
-    test_segm_object = SegmentationObject(class_i=1, x=0, y=0, w=1, h=1, data=[[]])
+    test_segm_object = SegmentationObject(class_i=1, x=0, y=0, w=1, h=1, mask=[[]])
     storage.save(job_id, [test_segm_object], output=True)
 
     resp = client.simulate_get(f"/jobs/{job_id}")
@@ -110,3 +117,21 @@ def test_segm_post_get(client: testing.TestClient):
 
     resp_doc = json.loads(resp.content)
     assert "objects" in resp_doc, resp_doc
+
+
+def test_api_key_auth_error():
+    config["common"]["api_key"] = "API_KEY"
+
+    client = testing.TestClient(get_app())
+    resp = client.simulate_get("/")
+
+    assert resp.status == falcon.HTTP_401
+
+
+def test_api_key_auth_ok():
+    config["common"]["api_key"] = "API_KEY"
+
+    client = testing.TestClient(get_app())
+    resp = client.simulate_get("/", headers={"Authorization": "Bearer API_KEY"})
+
+    assert resp.status == falcon.HTTP_OK

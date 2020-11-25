@@ -8,7 +8,7 @@ from typing import List
 
 import falcon
 import numpy as np
-import PIL
+import PIL.Image
 
 from telesto.logger import logger
 from telesto.models import RandomClassificationModel

@@ -15,33 +15,32 @@ import PIL
 from PIL.Image import Image
 import falcon
 
-from telesto.segmentation import SegmentationObject, DataStorage
 from telesto.logger import logger
+from telesto.config import config
+from telesto.segmentation import SegmentationObject, DataStorage
 from telesto.segmentation.model import DummySegmentationModel, SegmentationModelBase
 
 
-API_CONFIG = {
-    "name": "Nucleus instance segmentation",
-    "desc": "This API provides endpoints for segmenting nuclei on fluorescent images",
-    "input": {
-        "type": "png",
-        "palette": "RGB24",
-        "encoding": "base64",
-        "max_size": "5120",
-    },
-    "output": {
-        "type": "json",
-        "palette": "GREY8",
-        "encoding": "plain",
-    },
-    "classes": [
-        "bg", "fg"
-    ],
+INPUT_IMAGE_FORMAT = {
+    "type": "png",
+    "palette": "RGB24",
+    "encoding": "base64",
+    "max_size": "5120",
+}
+
+OUTPUT_OBJECT_MASK_FORMAT = {
+    "type": "json",
+    "palette": "GREY8",
+    "encoding": "plain",
 }
 
 API_DOCS = {
-    "name": API_CONFIG["name"],
-    "description": API_CONFIG["desc"],
+    "name": config.get("common", "name"),
+    "description": config.get("common", "desc"),
+    "authentication": {
+        "header": "Authorization",
+        "schema": "Bearer <API_KEY>"
+    },
     "endpoints": [
         {
             "path": "/",
@@ -62,7 +61,7 @@ API_DOCS = {
                 "image": "<str>",
             },
             "image_format": {
-                **API_CONFIG["input"],
+                **INPUT_IMAGE_FORMAT,
             },
             "response_body": {
                 "job_id": "<UUID>"
@@ -79,14 +78,14 @@ API_DOCS = {
                         "y": "<int>",
                         "w": "<int>",
                         "h": "<int>",
-                        "data": "<str>"
+                        "mask": "<str>"
                     }
                 ],
             },
-            "object_data_format": {
-                **API_CONFIG["output"],
+            "object_mask_format": {
+                **OUTPUT_OBJECT_MASK_FORMAT,
             },
-            "classes": API_CONFIG["classes"],
+            "classes": config.get("common", "classes").split(","),
         }
     ]
 }

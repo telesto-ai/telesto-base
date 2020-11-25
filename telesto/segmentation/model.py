@@ -28,10 +28,10 @@ class SegmentationModelBase:
 
 class DummySegmentationModel(SegmentationModelBase):
     def __init__(self, storage: DataStorage):
-        super().__init__(classes=["fg", "bg"], model_path='', storage=storage)
+        super().__init__(classes=["fg", "bg"], model_path="", storage=storage)
 
     def _load_model(self, model_path: str):
         pass
 
     def predict(self, input: np.ndarray) -> List[SegmentationObject]:
-        return [SegmentationObject(class_i=1, x=10, y=10, w=2, h=2, data=[[0, 1], [0, 1]])]
+        return [SegmentationObject(class_i=1, x=10, y=10, w=2, h=2, mask=[[0, 1], [0, 1]])]

@@ -1,9 +1,8 @@
-import sys
-
 import falcon
 from falcon.http_status import HTTPStatus
 
 from telesto.logger import logger
+from telesto.config import config
 from telesto.models import ModelTypes
 
 
@@ -17,9 +16,40 @@ class HandleCORS(object):
             raise HTTPStatus(falcon.HTTP_200, body="\n")
 
 
-def get_app(model_type: ModelTypes = ModelTypes.CLASSIFICATION):
-    api = falcon.API(middleware=[HandleCORS()])
+class AuthMiddleware(object):
 
+    def process_request(self, req, resp):
+        challenges = ["Bearer realm='Access to protected endpoint'"]
+        auth = req.get_header("Authorization")
+
+        if auth is None:
+            description = "Please provide an API key as part of the request."
+            raise falcon.HTTPUnauthorized("API key required", description, challenges)
+
+        if not self._api_key_is_valid(auth):
+            description = (
+                "The provided API key is not valid. Please request a API key and try again."
+            )
+            raise falcon.HTTPUnauthorized("Authentication required", description, challenges)
+
+    def _api_key_is_valid(self, auth):
+        try:
+            _, api_key = auth.split(" ")
+            assert config.get("common", "api_key") == api_key, "API key mismatch"
+        except Exception as e:
+            logger.warning(f"Auth error: {e}")
+            return False
+
+        return True
+
+
+def get_app():
+    middleware = [HandleCORS()]
+    if config.get("common", "api_key"):
+        middleware.append(AuthMiddleware())
+    api = falcon.API(middleware=middleware)
+
+    model_type = config.get("common", "model_type")
     if model_type == ModelTypes.SEGMENTATION:
         from telesto.segmentation.app import add_routes
     elif model_type == ModelTypes.CLASSIFICATION:
@@ -36,7 +66,6 @@ if __name__ == "__main__":
 
     from wsgiref import simple_server
 
-    model_type = ModelTypes(sys.argv[1])
-    httpd = simple_server.make_server("0.0.0.0", 9876, get_app(model_type))
+    httpd = simple_server.make_server("0.0.0.0", 9876, get_app())
     logger.info("Dev API server started")
     httpd.serve_forever()

@@ -15,7 +15,7 @@ def storage():
     storage.clean()
 
 
-test_object = SegmentationObject(class_i=1, x=0, y=0, w=1, h=1, data=[[]])
+test_object = SegmentationObject(class_i=1, x=0, y=0, w=1, h=1, mask=[[]])
 
 
 class SegmentationModelTest(SegmentationModelBase):

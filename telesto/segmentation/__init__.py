@@ -35,5 +35,4 @@ class SegmentationObject:
     y: int
     w: int
     h: int
-    data: List[List[int]]
-
+    mask: List[List[int]]
