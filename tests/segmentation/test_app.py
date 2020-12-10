@@ -12,15 +12,15 @@ import PIL.Image
 
 from telesto.app import get_app
 from telesto.config import config
-from telesto.models import ModelTypes
-from telesto.segmentation import DataStorage, SegmentationObject
+from telesto.models import ModelType
+from telesto.instance_segmentation import DataStorage, SegmentationObject
 
 os.environ["USE_FALLBACK_MODEL"] = "1"
 
 
 @pytest.fixture(scope="session", autouse=True)
 def config_fixture():
-    config["common"]["model_type"] = ModelTypes.SEGMENTATION.value
+    config["common"]["model_type"] = ModelType.INSTANCE_SEGMENTATION.value
     config["common"]["api_key"] = ""
 
 

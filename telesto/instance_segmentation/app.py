@@ -17,8 +17,8 @@ import falcon
 
 from telesto.logger import logger
 from telesto.config import config
-from telesto.segmentation import SegmentationObject, DataStorage
-from telesto.segmentation.model import DummySegmentationModel, SegmentationModelBase
+from telesto.instance_segmentation import SegmentationObject, DataStorage
+from telesto.instance_segmentation.model import DummySegmentationModel, SegmentationModelBase
 
 
 INPUT_IMAGE_FORMAT = {
@@ -51,7 +51,7 @@ API_DOCS = {
         {
             "path": "/docs",
             "method": "GET",
-            "name": "Information endpoint",
+            "name": "Documentation endpoint",
             "description": "Returns this information",
         },
         {

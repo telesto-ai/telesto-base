@@ -4,8 +4,8 @@ import PIL.Image
 import numpy as np
 import pytest
 
-from segmentation import DataStorage, SegmentationObject
-from segmentation.model import SegmentationModelBase
+from instance_segmentation import DataStorage, SegmentationObject
+from instance_segmentation.model import SegmentationModelBase
 
 
 @pytest.fixture(scope="session")

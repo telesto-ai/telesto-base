@@ -30,6 +30,17 @@ class DataStorage:
 
 @dataclass
 class SegmentationObject:
+    """Instance segmentation object.
+
+    Attributes:
+        class_i: class index
+        x: X coordinate of top left corner
+        y: Y coordinate of top left corner
+        w: object width
+        h: object height
+        mask: 2D mask of object pixels
+    """
+
     class_i: int
     x: int
     y: int

@@ -3,7 +3,7 @@ from falcon.http_status import HTTPStatus
 
 from telesto.logger import logger
 from telesto.config import config
-from telesto.models import ModelTypes
+from telesto.models import ModelType
 
 
 class HandleCORS(object):
@@ -17,6 +17,17 @@ class HandleCORS(object):
 
 
 class AuthMiddleware(object):
+
+    @staticmethod
+    def _api_key_is_valid(auth):
+        try:
+            _, api_key = auth.split(" ")
+            assert config.get("common", "api_key") == api_key, "API key mismatch"
+        except Exception as e:
+            logger.warning(f"Auth error: {e}")
+            return False
+
+        return True
 
     def process_request(self, req, resp):
         challenges = ["Bearer realm='Access to protected endpoint'"]
@@ -32,16 +43,6 @@ class AuthMiddleware(object):
             )
             raise falcon.HTTPUnauthorized("Authentication required", description, challenges)
 
-    def _api_key_is_valid(self, auth):
-        try:
-            _, api_key = auth.split(" ")
-            assert config.get("common", "api_key") == api_key, "API key mismatch"
-        except Exception as e:
-            logger.warning(f"Auth error: {e}")
-            return False
-
-        return True
-
 
 def get_app():
     middleware = [HandleCORS()]
@@ -50,9 +51,9 @@ def get_app():
     api = falcon.API(middleware=middleware)
 
     model_type = config.get("common", "model_type")
-    if model_type == ModelTypes.SEGMENTATION:
-        from telesto.segmentation.app import add_routes
-    elif model_type == ModelTypes.CLASSIFICATION:
+    if model_type == ModelType.INSTANCE_SEGMENTATION:
+        from telesto.instance_segmentation.app import add_routes
+    elif model_type == ModelType.CLASSIFICATION:
         from telesto.classification.app import add_routes
     else:
         raise Exception(f"Wrong model type: {model_type}")

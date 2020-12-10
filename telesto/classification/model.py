@@ -5,24 +5,32 @@ import numpy as np
 
 
 class ClassificationModelBase:
-    """
-    Base class for the model to be served.
+    """Base class for a classification model wrapper.
 
     Attributes:
-        classes: list, contains the labels
-        model_path: str, path to the model file
+        classes (list): contains the labels
         model: the object representing the model, to be loaded with _load_model()
     """
+
     def __init__(self, classes: List[str], model_path: str):
         self.classes: List[str] = classes
-        self.class_n: int = len(classes)
-        self.model_path: str = model_path
         self.model = self._load_model(model_path=model_path)
 
     def _load_model(self, model_path: str) -> object:
+        """Load model weights from path, create and return a model object."""
+
         raise NotImplemented
 
     def predict(self, input_list: List[np.ndarray]) -> np.ndarray:
+        """Classify a list of input images and return an array of class probabilities.
+
+        Args:
+            input_list: list of input images, each image is a 3D array
+                with a number of channels
+
+        Returns:
+            2D array of class probabilities, 0 dim - images, 1 dim - classes
+        """
         raise NotImplemented
 
     def __call__(self, input_list: List[np.ndarray]) -> np.ndarray:
