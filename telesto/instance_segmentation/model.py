@@ -3,7 +3,7 @@ from typing import List
 
 import numpy as np
 
-from telesto.instance_segmentation import DataStorage, SegmentationObject
+from telesto.instance_segmentation import DataStorage, DetectionObject
 
 
 class SegmentationModelBase:
@@ -24,7 +24,7 @@ class SegmentationModelBase:
 
         raise NotImplemented
 
-    def predict(self, input: np.ndarray) -> List[SegmentationObject]:
+    def predict(self, input: np.ndarray) -> List[DetectionObject]:
         """Segment input image and return a list of found objects.
 
         Args:
@@ -48,5 +48,5 @@ class DummySegmentationModel(SegmentationModelBase):
     def _load_model(self, model_path: str):
         pass
 
-    def predict(self, input: np.ndarray) -> List[SegmentationObject]:
-        return [SegmentationObject(class_i=1, x=10, y=10, w=2, h=2, mask=[[0, 1], [0, 1]])]
+    def predict(self, input: np.ndarray) -> List[DetectionObject]:
+        return [DetectionObject(coords=[(0, 0), (1, 1)])]

@@ -49,6 +49,7 @@ def get_app():
     if config.get("common", "api_key"):
         middleware.append(AuthMiddleware())
     api = falcon.API(middleware=middleware)
+    api.req_options.strip_url_path_trailing_slash = True
 
     model_type = config.get("common", "model_type")
     if model_type == ModelType.INSTANCE_SEGMENTATION:

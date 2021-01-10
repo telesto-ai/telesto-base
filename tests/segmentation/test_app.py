@@ -13,7 +13,7 @@ import PIL.Image
 from telesto.app import get_app
 from telesto.config import config
 from telesto.models import ModelType
-from telesto.instance_segmentation import DataStorage, SegmentationObject
+from telesto.instance_segmentation import DataStorage, DetectionObject, segmentation_object_asdict
 
 os.environ["USE_FALLBACK_MODEL"] = "1"
 
@@ -80,7 +80,9 @@ def test_docs_get(client: testing.TestClient):
 
 def test_segm_get(client: testing.TestClient, storage: DataStorage):
     job_id = "bcd"
-    test_segm_object = SegmentationObject(class_i=1, x=0, y=0, w=1, h=1, mask=[[]])
+    test_segm_object = DetectionObject(coords=[(0, 0)])
+    test_image = make_test_image(rgb=True)
+    storage.save(job_id, test_image, output=False)
     storage.save(job_id, [test_segm_object], output=True)
 
     resp = client.simulate_get(f"/jobs/{job_id}")
@@ -88,7 +90,7 @@ def test_segm_get(client: testing.TestClient, storage: DataStorage):
     assert resp.status == falcon.HTTP_OK
 
     resp_doc = json.loads(resp.content)
-    assert SegmentationObject(**resp_doc["objects"][0]) == test_segm_object
+    assert resp_doc["objects"][0] == segmentation_object_asdict(test_segm_object, test_image.size)
 
 
 def test_segm_post_get(client: testing.TestClient):
@@ -99,7 +101,7 @@ def test_segm_post_get(client: testing.TestClient):
     req_doc = {"image": base64.b64encode(fp.read()).decode()}
 
     resp = client.simulate_post(
-        "/jobs", body=json.dumps(req_doc), headers={"content-type": "application/json"}
+        "/jobs/", body=json.dumps(req_doc), headers={"content-type": "application/json"}
     )
 
     assert resp.status == falcon.HTTP_CREATED, resp.text

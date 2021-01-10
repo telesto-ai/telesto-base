@@ -4,9 +4,8 @@ import os
 import socket
 import threading
 import time
-from dataclasses import asdict
 from importlib import import_module
-from typing import Deque, List
+from typing import Deque, List, Dict, Tuple
 from uuid import uuid4
 import json
 from collections import deque
@@ -17,7 +16,11 @@ import falcon
 
 from telesto.logger import logger
 from telesto.config import config
-from telesto.instance_segmentation import SegmentationObject, DataStorage
+from telesto.instance_segmentation import (
+    DetectionObject,
+    DataStorage,
+    segmentation_object_asdict,
+)
 from telesto.instance_segmentation.model import DummySegmentationModel, SegmentationModelBase
 
 
@@ -31,7 +34,7 @@ INPUT_IMAGE_FORMAT = {
 OUTPUT_OBJECT_MASK_FORMAT = {
     "type": "json",
     "palette": "GREY8",
-    "encoding": "plain",
+    "encoding": "RLE",
 }
 
 API_DOCS = {
@@ -91,18 +94,18 @@ API_DOCS = {
 }
 
 
-def preprocess(doc: dict) -> Image:
+def preprocess(doc: Dict) -> Image:
     try:
         image_bytes = base64.b64decode(doc["image"])
         image = PIL.Image.open(io.BytesIO(image_bytes))
-        assert image.mode == "RGB", f"Wrong image mode: {image.mode} != 'RGB'"
+        assert image.mode == "RGB", f"Wrong image mode: {image.mode}. Expected: 'RGB'"
     except Exception as e:
         raise ValueError(e)
     return image
 
 
-def postprocess(objects: List[SegmentationObject]) -> dict:
-    return {"objects": [asdict(obj) for obj in objects]}
+def postprocess(objects: List[DetectionObject], size: Tuple[int, int]) -> Dict:
+    return {"objects": [segmentation_object_asdict(obj, size) for obj in objects]}
 
 
 class SegmentationBase:
@@ -148,10 +151,11 @@ class SegmentationJob:
 
     def on_get(self, req: falcon.Request, resp: falcon.Response, job_id: str):
         try:
+            image = self._storage.load(job_id, output=False)
             objects = self._storage.load(job_id, output=True)
             assert objects is not None, "No data found"
 
-            resp_doc = postprocess(objects)
+            resp_doc = postprocess(objects, image.size)
             resp.body = json.dumps(resp_doc)
         except AssertionError as e:
             raise falcon.HTTPError(falcon.HTTP_404, description=str(e))
@@ -204,6 +208,8 @@ def add_routes(api: falcon.API):
 
     api.add_route("/", SegmentationBase())
     api.add_route("/docs", SegmentationDocs())
-    # Note: falcon internally strips trailing slashes from requests
+    # Note: Falcon internally strips trailing slashes when compiling routes.
+    # When "api.req_options.strip_url_path_trailing_slash = True"
+    # they are also striped them from requests
     api.add_route("/jobs", SegmentationJobs(storage, job_queue))
     api.add_route("/jobs/{job_id}", SegmentationJob(storage))

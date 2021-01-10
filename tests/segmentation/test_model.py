@@ -4,8 +4,8 @@ import PIL.Image
 import numpy as np
 import pytest
 
-from instance_segmentation import DataStorage, SegmentationObject
-from instance_segmentation.model import SegmentationModelBase
+from telesto.instance_segmentation import DataStorage, DetectionObject
+from telesto.instance_segmentation.model import SegmentationModelBase
 
 
 @pytest.fixture(scope="session")
@@ -15,7 +15,7 @@ def storage():
     storage.clean()
 
 
-test_object = SegmentationObject(class_i=1, x=0, y=0, w=1, h=1, mask=[[]])
+test_object = DetectionObject(coords=[(0, 0)])
 
 
 class SegmentationModelTest(SegmentationModelBase):
@@ -25,7 +25,7 @@ class SegmentationModelTest(SegmentationModelBase):
     def _load_model(self, model_path: str):
         pass
 
-    def predict(self, input: np.ndarray) -> List[SegmentationObject]:
+    def predict(self, input: np.ndarray) -> List[DetectionObject]:
         return [test_object]
 
 
