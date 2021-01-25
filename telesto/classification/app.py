@@ -1,20 +1,53 @@
 import base64
 import io
-import os
 import json
-import socket
-from importlib import import_module
-from typing import List
+from typing import List, Dict
 
 import falcon
 import numpy as np
 import PIL.Image
 
-from telesto.logger import logger
+from telesto.config import config
+from telesto.resources.simple import RootResource, DocsResource
 from telesto.models import RandomClassificationModel
 
+PNG_RGB_BASE64_FORMAT = {
+    "type": "png",
+    "palette": "RGB24 or GRAY8",
+    "encoding": "base64",
+    "max_size": "1024",
+}
 
-def preprocess(doc: dict) -> List[np.ndarray]:
+PREDICT_ENDPOINT_DOCS = {
+    "path": "/",
+    "method": "POST",
+    "name": "Predict endpoint",
+    "request_body": {
+        "images": [
+            {
+                "content": "<str>"
+            }
+        ],
+    },
+    "image_content_format": {
+        **PNG_RGB_BASE64_FORMAT,
+    },
+    "response_body": {
+        "objects": [
+            {
+                "x": "<int>",
+                "y": "<int>",
+                "w": "<int>",
+                "h": "<int>",
+                "mask": "<str>"
+            }
+        ],
+    },
+    "classes": config.get("common", "classes").split(","),
+},
+
+
+def preprocess(doc: Dict) -> List[np.ndarray]:
     input_list = []
     for image_doc in doc["images"]:
         image_bytes = base64.b64decode(image_doc["content"])
@@ -23,10 +56,13 @@ def preprocess(doc: dict) -> List[np.ndarray]:
         assert array.ndim in [2, 3], f"Wrong number of dimensions: {array.ndim}"
 
         input_list.append(array)
+
+    if not (0 < len(input_list) <= 32):
+        raise ValueError(f"Wrong number of images: {len(input_list)}: expected 1 - 32")
     return input_list
 
 
-def postprocess(pred_array: np.ndarray, classes: List[str]) -> dict:
+def postprocess(pred_array: np.ndarray, classes: List[str]) -> Dict:
     predictions = []
     for pred in pred_array:
         class_probs = {classes[i]: round(float(prob), 5) for i, prob in enumerate(pred)}
@@ -35,42 +71,16 @@ def postprocess(pred_array: np.ndarray, classes: List[str]) -> dict:
     return {"predictions": predictions}
 
 
-class ClassificationResource:
-    def __init__(self):
-        try:
-            self.model_wrapper = self._load_model()
-        except ModuleNotFoundError as e:
-            if int(os.environ.get("USE_FALLBACK_MODEL", 0)):
-                logger.warning(
-                    "No model module found. Using fallback model 'RandomClassificationModel'"
-                )
-                self.model_wrapper = RandomClassificationModel()
-            else:
-                raise e
+def post_handler(model_wrapper, req: falcon.Request, resp: falcon.Response):
+    req_doc = json.load(req.bounded_stream)
+    input_data = preprocess(req_doc)
 
-    @staticmethod
-    def _load_model():
-        module = import_module("model")
-        model_class = getattr(module, "ClassificationModel")
-        return model_class()
+    pred_data = model_wrapper.predict(input_data)
 
-    def on_get(self, req: falcon.Request, resp: falcon.Response):
-        doc = {"status": "ok", "host": socket.getfqdn(), "worker.pid": os.getpid()}
-        resp.body = json.dumps(doc, ensure_ascii=False)
-
-    def on_post(self, req: falcon.Request, resp: falcon.Response):
-        try:
-            req_doc = json.load(req.bounded_stream)
-            input_list = preprocess(req_doc)
-            pred_array = self.model_wrapper(input_list)
-            resp_doc = postprocess(pred_array, self.model_wrapper.classes)
-            resp.body = json.dumps(resp_doc)
-        except ValueError as e:
-            raise falcon.HTTPError(falcon.HTTP_400, description=str(e))
-        except Exception as e:
-            logger.error(e, exc_info=True)
-            raise falcon.HTTPError(falcon.HTTP_500)
+    resp_doc = postprocess(pred_data, model_wrapper.classes)
+    resp.body = json.dumps(resp_doc)
 
 
 def add_routes(api: falcon.API):
-    api.add_route("/", ClassificationResource())
+    api.add_route("/", RootResource(post_handler, "ClassificationModel", RandomClassificationModel))
+    api.add_route("/docs", DocsResource(PREDICT_ENDPOINT_DOCS))

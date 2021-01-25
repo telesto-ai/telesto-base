@@ -6,4 +6,5 @@ from telesto.instance_segmentation.model import SegmentationModelBase, DummySegm
 
 class ModelType(str, Enum):
     CLASSIFICATION = "CLASSIFICATION"
+    OBJECT_DETECTION = "OBJECT_DETECTION"
     INSTANCE_SEGMENTATION = "INSTANCE_SEGMENTATION"

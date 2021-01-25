@@ -1,10 +1,11 @@
 import pickle
 import shutil
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Any, Dict, Tuple
 
 import numpy as np
+
+from utils import BBox, BaseObject
 
 
 class DataStorage:
@@ -30,20 +31,7 @@ class DataStorage:
             return pickle.load(image_path.open("rb"))
 
 
-@dataclass
-class BBox:
-    """Bounding box dataclass.
-
-    (x1, y1) - top left corner, (x2, y2) - bottom right one
-    """
-
-    x1: int
-    y1: int
-    x2: int
-    y2: int
-
-
-class DetectionObject:
+class SegmentationObject(BaseObject):
     """
     Attributes:
         coords: list of (x, y) coordinates
@@ -63,10 +51,20 @@ class DetectionObject:
         self.bbox = BBox(min(xs), min(ys), max(xs), max(ys))
 
     def __repr__(self):
-        return f"<DetectionObject: bbox={self.bbox} coord_n={len(self.coords)}>"
+        return f"<SegmentationObject: bbox={self.bbox} coord_n={len(self.coords)}>"
 
-    def __eq__(self, other: "DetectionObject"):
+    def __eq__(self, other: "SegmentationObject"):
         return other.coords == self.coords and other.bbox == self.bbox
+
+    def asdict(self, image_size: Tuple[int, int]) -> Dict:
+        dic = {
+            "x": self.bbox.x1,
+            "y": self.bbox.y1,
+            "w": self.bbox.x2 - self.bbox.x1 + 1,
+            "h": self.bbox.y2 - self.bbox.y1 + 1,
+            "mask": rle_encode(self.coords, image_size)
+        }
+        return dic
 
 
 def rle_encode(coords: List[Tuple[int, int]], image_size: Tuple[int, int]) -> str:
@@ -85,14 +83,3 @@ def rle_encode(coords: List[Tuple[int, int]], image_size: Tuple[int, int]) -> st
     lengths = ends - starts
 
     return " ".join(f"{st} {l}" for st, l in zip(starts, lengths))
-
-
-def segmentation_object_asdict(obj: DetectionObject, image_size: Tuple[int, int]) -> Dict:
-    dic = {
-        "x": obj.bbox.x1,
-        "y": obj.bbox.y1,
-        "w": obj.bbox.x2 - obj.bbox.x1 + 1,
-        "h": obj.bbox.y2 - obj.bbox.y1 + 1,
-        "mask": rle_encode(obj.coords, image_size)
-    }
-    return dic

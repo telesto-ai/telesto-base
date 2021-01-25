@@ -10,16 +10,16 @@ from uuid import uuid4
 import json
 from collections import deque
 
-import PIL
+import PIL.Image
 from PIL.Image import Image
 import falcon
+import numpy as np
 
 from telesto.logger import logger
 from telesto.config import config
 from telesto.instance_segmentation import (
-    DetectionObject,
-    DataStorage,
-    segmentation_object_asdict,
+    SegmentationObject,
+    DataStorage
 )
 from telesto.instance_segmentation.model import DummySegmentationModel, SegmentationModelBase
 
@@ -95,17 +95,15 @@ API_DOCS = {
 
 
 def preprocess(doc: Dict) -> Image:
-    try:
-        image_bytes = base64.b64decode(doc["image"])
-        image = PIL.Image.open(io.BytesIO(image_bytes))
-        assert image.mode == "RGB", f"Wrong image mode: {image.mode}. Expected: 'RGB'"
-    except Exception as e:
-        raise ValueError(e)
+    image_bytes = base64.b64decode(doc["image"])
+    image = PIL.Image.open(io.BytesIO(image_bytes))
+    if image.mode != "RGB":
+        raise ValueError(f"Wrong image mode: {image.mode}. Expected: 'RGB'")
     return image
 
 
-def postprocess(objects: List[DetectionObject], size: Tuple[int, int]) -> Dict:
-    return {"objects": [segmentation_object_asdict(obj, size) for obj in objects]}
+def postprocess(objects: List[SegmentationObject], size: Tuple[int, int]) -> Dict:
+    return {"objects": [(obj.asdict(size)) for obj in objects]}
 
 
 class SegmentationBase:
@@ -166,17 +164,17 @@ class SegmentationJob:
             raise falcon.HTTPError(falcon.HTTP_500)
 
 
-def load_model(storage: DataStorage) -> SegmentationModelBase:
+def load_model() -> SegmentationModelBase:
     try:
         module = import_module("model")
         model_class = getattr(module, "SegmentationModel")
-        return model_class(storage)
+        return model_class()
     except ModuleNotFoundError as e:
         if int(os.environ.get("USE_FALLBACK_MODEL", 0)):
             logger.warning(
                 "No 'model' module found. Using fallback model 'DummySegmentationModel'"
             )
-            return DummySegmentationModel(storage)
+            return DummySegmentationModel()
         else:
             raise e
 
@@ -185,14 +183,18 @@ def start_worker(storage: DataStorage, job_queue: Deque):
 
     def thread_function():
         logger.info("Starting worker thread")
-        model_wrapper = load_model(storage)
+        model_wrapper = load_model()
         logger.info("Worker thread started")
 
         while True:
             if job_queue:
                 job_id = job_queue.pop()
                 logger.info(f"Processing task {job_id}")
-                model_wrapper(job_id)
+
+                image = storage.load(job_id, output=False)
+                objects = model_wrapper.predict(np.asarray(image))
+                storage.save(job_id, objects, output=True)
+
                 logger.info(f"Finished task {job_id}")
             else:
                 time.sleep(1)

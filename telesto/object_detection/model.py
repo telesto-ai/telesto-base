@@ -2,10 +2,11 @@ from typing import List
 
 import numpy as np
 
-from telesto.instance_segmentation import SegmentationObject
+from telesto.object_detection import DetectionObject
+from telesto.utils import BBox
 
 
-class SegmentationModelBase:
+class ObjectDetectionModelBase:
     """Base class for an instance segmentation model wrapper.
 
     Attributes:
@@ -22,7 +23,7 @@ class SegmentationModelBase:
 
         raise NotImplemented
 
-    def predict(self, input: np.ndarray) -> List[SegmentationObject]:
+    def predict(self, input: np.ndarray) -> List[DetectionObject]:
         """Segment input image and return a list of found objects.
 
         Args:
@@ -34,12 +35,12 @@ class SegmentationModelBase:
         raise NotImplemented
 
 
-class DummySegmentationModel(SegmentationModelBase):
+class DummyObjectDetectionModel(ObjectDetectionModelBase):
     def __init__(self):
         super().__init__(classes=["fg", "bg"], model_path="")
 
     def _load_model(self, model_path: str):
         pass
 
-    def predict(self, input: np.ndarray) -> List[SegmentationObject]:
-        return [SegmentationObject(coords=[(0, 0), (1, 1)])]
+    def predict(self, input: np.ndarray) -> List[DetectionObject]:
+        return [DetectionObject(BBox(0, 0, 9, 9))]

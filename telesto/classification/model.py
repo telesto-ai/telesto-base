@@ -33,12 +33,6 @@ class ClassificationModelBase:
         """
         raise NotImplemented
 
-    def __call__(self, input_list: List[np.ndarray]) -> np.ndarray:
-        if not (0 < len(input_list) <= 32):
-            raise ValueError(f"Wrong number of images: {len(input_list)}")
-
-        return self.predict(input_list)
-
 
 class RandomClassificationModel(ClassificationModelBase):
     def __init__(self):

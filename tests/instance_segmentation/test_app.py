@@ -10,23 +10,15 @@ import pytest
 import numpy as np
 import PIL.Image
 
-from telesto.app import get_app
 from telesto.config import config
 from telesto.models import ModelType
-from telesto.instance_segmentation import DataStorage, DetectionObject, segmentation_object_asdict
-
-os.environ["USE_FALLBACK_MODEL"] = "1"
+from telesto.instance_segmentation import DataStorage, SegmentationObject
 
 
 @pytest.fixture(scope="session", autouse=True)
 def config_fixture():
     config["common"]["model_type"] = ModelType.INSTANCE_SEGMENTATION.value
     config["common"]["api_key"] = ""
-
-
-@pytest.fixture
-def client():
-    return testing.TestClient(get_app())
 
 
 @pytest.fixture(scope="session")
@@ -80,7 +72,7 @@ def test_docs_get(client: testing.TestClient):
 
 def test_segm_get(client: testing.TestClient, storage: DataStorage):
     job_id = "bcd"
-    test_segm_object = DetectionObject(coords=[(0, 0)])
+    test_segm_object = SegmentationObject(coords=[(0, 0)])
     test_image = make_test_image(rgb=True)
     storage.save(job_id, test_image, output=False)
     storage.save(job_id, [test_segm_object], output=True)
@@ -90,7 +82,7 @@ def test_segm_get(client: testing.TestClient, storage: DataStorage):
     assert resp.status == falcon.HTTP_OK
 
     resp_doc = json.loads(resp.content)
-    assert resp_doc["objects"][0] == segmentation_object_asdict(test_segm_object, test_image.size)
+    assert resp_doc["objects"][0] == test_segm_object.asdict(test_image.size)
 
 
 def test_segm_post_get(client: testing.TestClient):
@@ -119,21 +111,3 @@ def test_segm_post_get(client: testing.TestClient):
 
     resp_doc = json.loads(resp.content)
     assert "objects" in resp_doc, resp_doc
-
-
-def test_api_key_auth_error():
-    config["common"]["api_key"] = "API_KEY"
-
-    client = testing.TestClient(get_app())
-    resp = client.simulate_get("/")
-
-    assert resp.status == falcon.HTTP_401
-
-
-def test_api_key_auth_ok():
-    config["common"]["api_key"] = "API_KEY"
-
-    client = testing.TestClient(get_app())
-    resp = client.simulate_get("/", headers={"Authorization": "Bearer API_KEY"})
-
-    assert resp.status == falcon.HTTP_OK

@@ -52,10 +52,12 @@ def get_app():
     api.req_options.strip_url_path_trailing_slash = True
 
     model_type = config.get("common", "model_type")
-    if model_type == ModelType.INSTANCE_SEGMENTATION:
-        from telesto.instance_segmentation.app import add_routes
-    elif model_type == ModelType.CLASSIFICATION:
+    if model_type == ModelType.CLASSIFICATION:
         from telesto.classification.app import add_routes
+    elif model_type == ModelType.OBJECT_DETECTION:
+        from telesto.object_detection.app import add_routes
+    elif model_type == ModelType.INSTANCE_SEGMENTATION:
+        from telesto.instance_segmentation.app import add_routes
     else:
         raise Exception(f"Wrong model type: {model_type}")
 
