@@ -56,6 +56,7 @@ class RootResource:
         try:
             self.post_handler(self.model_wrapper, req, resp)
         except ValueError as e:
+            logger.error(e, exc_info=True)
             raise falcon.HTTPError(falcon.HTTP_400, description=str(e))
         except Exception as e:
             logger.error(e, exc_info=True)

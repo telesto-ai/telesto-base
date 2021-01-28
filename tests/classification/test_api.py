@@ -9,14 +9,12 @@ import numpy as np
 import PIL.Image
 
 from telesto.config import config
-from telesto.utils import BBox
 from telesto.models import ModelType
-from telesto.object_detection import DetectionObject
 
 
 @pytest.fixture(scope="session", autouse=True)
 def config_fixture():
-    config["common"]["model_type"] = ModelType.OBJECT_DETECTION.value
+    config["common"]["model_type"] = ModelType.CLASSIFICATION.value
     config["common"]["api_key"] = ""
 
 
@@ -60,6 +58,11 @@ def test_root_post(client: testing.TestClient):
     assert resp.status == falcon.HTTP_OK
 
     resp_doc = json.loads(resp.content)
-    assert resp_doc["predictions"] == [
-        {"objects": [DetectionObject(BBox(0, 0, 9, 9)).asdict()]}
-    ]
+    assert "predictions" in resp_doc
+
+    for pred_doc in resp_doc["predictions"]:
+        assert isinstance(pred_doc["class"], str)
+
+        for prob_doc in pred_doc["probs"]:
+            assert isinstance(prob_doc["class"], str)
+            assert 0 <= prob_doc["prob"] <= 1

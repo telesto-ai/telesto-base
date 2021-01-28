@@ -34,9 +34,9 @@ class ClassificationModelBase:
         raise NotImplemented
 
 
-class RandomClassificationModel(ClassificationModelBase):
+class DummyClassificationModel(ClassificationModelBase):
     def __init__(self):
-        super().__init__(classes=["cat", "dog"], model_path='')
+        super().__init__(classes=["cat", "dog"], model_path="")
 
     def _load_model(self, model_path: str):
         pass

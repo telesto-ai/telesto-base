@@ -1,21 +1,18 @@
-import base64
-import io
 import json
 from typing import List, Dict
 
 import falcon
 import numpy as np
-import PIL.Image
 
 from telesto.config import config
 from telesto.resources.simple import RootResource, DocsResource
 from telesto.object_detection.model import DummyObjectDetectionModel
 from telesto.object_detection import DetectionObject
+from telesto.utils import convert_base64_images_to_arrays
 
-
-PNG_RGB_BASE64_FORMAT = {
+PNG_RGB_GRAY8_BASE64_FORMAT = {
     "type": "png",
-    "palette": "RGB24",
+    "palette": "RGB24 or GRAY8",
     "encoding": "base64",
     "max_size": "5120",
 }
@@ -25,38 +22,50 @@ PREDICT_ENDPOINT_DOCS = {
     "method": "POST",
     "name": "Predict endpoint",
     "request_body": {
-        "image": "<str>",
+        "images": [
+            {
+                "content": "<str>"
+            }
+        ]
     },
     "image_format": {
-        **PNG_RGB_BASE64_FORMAT,
+        **PNG_RGB_GRAY8_BASE64_FORMAT,
     },
     "response_body": {
-        "objects": [
+        "predictions": [
             {
-                "x": "<int>",
-                "y": "<int>",
-                "w": "<int>",
-                "h": "<int>",
-                "mask": "<str>"
+                "objects": [
+                    {
+                        "x": "<int>",
+                        "y": "<int>",
+                        "w": "<int>",
+                        "h": "<int>",
+                    }
+                ]
             }
-        ],
+        ]
     },
     "classes": config.get("common", "classes").split(","),
-},
+}
 
 
-def preprocess(doc: Dict) -> np.ndarray:
-    try:
-        image_bytes = base64.b64decode(doc["image"])
-        image = PIL.Image.open(io.BytesIO(image_bytes))
-        assert image.mode == "RGB", f"Wrong image mode: {image.mode}. Expected: 'RGB'"
-    except Exception as e:
-        raise ValueError(e)
-    return np.asarray(image)
+def preprocess(doc: Dict) -> List[np.ndarray]:
+    input_list = convert_base64_images_to_arrays(doc)
+    if not (0 < len(input_list) <= 32):
+        raise ValueError(f"Wrong number of images: {len(input_list)}. Expected: 1 - 32")
+
+    return input_list
 
 
-def postprocess(objects: List[DetectionObject]) -> Dict[str, List[Dict]]:
-    return {"objects": [(obj.asdict()) for obj in objects]}
+def postprocess(predictions: List[List[DetectionObject]]) -> Dict[str, List[Dict]]:
+    return {
+        "predictions": [
+            {
+                "objects": [obj.asdict() for obj in objects]
+            }
+            for objects in predictions
+        ]
+    }
 
 
 def post_handler(model_wrapper, req: falcon.Request, resp: falcon.Response):

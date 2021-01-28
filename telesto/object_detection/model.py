@@ -23,24 +23,24 @@ class ObjectDetectionModelBase:
 
         raise NotImplemented
 
-    def predict(self, input: np.ndarray) -> List[DetectionObject]:
+    def predict(self, input: List[np.ndarray]) -> List[List[DetectionObject]]:
         """Segment input image and return a list of found objects.
 
         Args:
-            input: input image, 3D array with 1 or 3 image channels
+            input: list of image arrays, 1 or 3 channels
 
         Returns:
-            list of found objects
+            list of results for all input arrays
         """
         raise NotImplemented
 
 
 class DummyObjectDetectionModel(ObjectDetectionModelBase):
     def __init__(self):
-        super().__init__(classes=["fg", "bg"], model_path="")
+        super().__init__(classes=[], model_path="")
 
     def _load_model(self, model_path: str):
         pass
 
-    def predict(self, input: np.ndarray) -> List[DetectionObject]:
-        return [DetectionObject(BBox(0, 0, 9, 9))]
+    def predict(self, input: List[np.ndarray]) -> List[List[DetectionObject]]:
+        return [[DetectionObject(BBox(0, 0, 9, 9))] for _ in input]

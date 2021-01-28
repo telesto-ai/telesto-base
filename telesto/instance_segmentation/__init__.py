@@ -5,7 +5,7 @@ from typing import List, Any, Dict, Tuple
 
 import numpy as np
 
-from utils import BBox, BaseObject
+from telesto.utils import BBox, BaseObject
 
 
 class DataStorage:

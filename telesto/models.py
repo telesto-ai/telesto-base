@@ -1,6 +1,7 @@
 from enum import Enum
 
-from telesto.classification.model import ClassificationModelBase, RandomClassificationModel
+from telesto.classification.model import ClassificationModelBase, DummyClassificationModel
+from telesto.object_detection.model import ObjectDetectionModelBase, DummyObjectDetectionModel
 from telesto.instance_segmentation.model import SegmentationModelBase, DummySegmentationModel
 
 

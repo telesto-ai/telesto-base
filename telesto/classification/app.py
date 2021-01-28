@@ -1,17 +1,15 @@
-import base64
-import io
 import json
 from typing import List, Dict
 
 import falcon
 import numpy as np
-import PIL.Image
 
 from telesto.config import config
 from telesto.resources.simple import RootResource, DocsResource
-from telesto.models import RandomClassificationModel
+from telesto.models import DummyClassificationModel
+from telesto.utils import convert_base64_images_to_arrays
 
-PNG_RGB_BASE64_FORMAT = {
+PNG_RGB_GRAY8_BASE64_FORMAT = {
     "type": "png",
     "palette": "RGB24 or GRAY8",
     "encoding": "base64",
@@ -30,16 +28,18 @@ PREDICT_ENDPOINT_DOCS = {
         ],
     },
     "image_content_format": {
-        **PNG_RGB_BASE64_FORMAT,
+        **PNG_RGB_GRAY8_BASE64_FORMAT,
     },
     "response_body": {
-        "objects": [
+        "predictions": [
             {
-                "x": "<int>",
-                "y": "<int>",
-                "w": "<int>",
-                "h": "<int>",
-                "mask": "<str>"
+                "probs": [
+                    {
+                        "class": "<str>",
+                        "prob": "<float>",
+                    }
+                ],
+                "class": "<str>",
             }
         ],
     },
@@ -48,26 +48,20 @@ PREDICT_ENDPOINT_DOCS = {
 
 
 def preprocess(doc: Dict) -> List[np.ndarray]:
-    input_list = []
-    for image_doc in doc["images"]:
-        image_bytes = base64.b64decode(image_doc["content"])
-        image = PIL.Image.open(io.BytesIO(image_bytes))
-        array = np.array(image)
-        assert array.ndim in [2, 3], f"Wrong number of dimensions: {array.ndim}"
-
-        input_list.append(array)
-
+    input_list = convert_base64_images_to_arrays(doc)
     if not (0 < len(input_list) <= 32):
-        raise ValueError(f"Wrong number of images: {len(input_list)}: expected 1 - 32")
+        raise ValueError(f"Wrong number of images: {len(input_list)}. Expected: 1 - 32")
+
     return input_list
 
 
 def postprocess(pred_array: np.ndarray, classes: List[str]) -> Dict:
     predictions = []
     for pred in pred_array:
-        class_probs = {classes[i]: round(float(prob), 5) for i, prob in enumerate(pred)}
-        class_prediction = classes[pred.argmax()]
-        predictions.append({"probs": class_probs, "prediction": class_prediction})
+        class_probs = [
+            {"class": classes[i], "prob": round(float(prob), 5)} for i, prob in enumerate(pred)
+        ]
+        predictions.append({"probs": class_probs, "class": classes[pred.argmax()]})
     return {"predictions": predictions}
 
 
@@ -82,5 +76,5 @@ def post_handler(model_wrapper, req: falcon.Request, resp: falcon.Response):
 
 
 def add_routes(api: falcon.API):
-    api.add_route("/", RootResource(post_handler, "ClassificationModel", RandomClassificationModel))
+    api.add_route("/", RootResource(post_handler, "ClassificationModel", DummyClassificationModel))
     api.add_route("/docs", DocsResource(PREDICT_ENDPOINT_DOCS))

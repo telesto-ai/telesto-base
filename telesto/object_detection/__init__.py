@@ -1,6 +1,6 @@
 from typing import Dict
 
-from utils import BaseObject, BBox
+from telesto.utils import BaseObject, BBox
 
 
 class DetectionObject(BaseObject):
