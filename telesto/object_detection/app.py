@@ -44,7 +44,7 @@ PREDICT_ENDPOINT_DOCS = {
             }
         ]
     },
-    "classes": config.get("common", "classes").split(","),
+    # "classes": config.get("common", "classes").split(","),
 }
 
 
