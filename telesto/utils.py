@@ -37,3 +37,11 @@ def convert_base64_images_to_arrays(doc: Dict) -> List[np.ndarray]:
 
         input_list.append(np.asarray(image))
     return input_list
+
+
+def preprocess_base64_images(doc: Dict, max_images: int = 32) -> List[np.ndarray]:
+    input_list = convert_base64_images_to_arrays(doc)
+    if not (0 < len(input_list) <= max_images):
+        raise ValueError(f"Wrong number of images: {len(input_list)}. Expected: 1 - {max_images}")
+
+    return input_list
